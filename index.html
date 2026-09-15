@@ -3,27 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OT 補水追蹤神器</title>
-    <!-- 引入 Tailwind CSS 方便排版 -->
+    <title>OT 補水追蹤神器 v2</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Tesseract.js 做 OCR 圖片轉文字 -->
+    <!-- 引入 Tesseract.js 做 OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <!-- 引入 FullCalendar 顯示日曆 -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
 <body class="bg-gray-100 p-4 md:p-8 font-sans">
     <div class="max-w-6xl mx-auto space-y-6">
-        <h1 class="text-3xl font-bold text-gray-800 text-center">🕒 OT 補水追蹤神器</h1>
+        <h1 class="text-3xl font-bold text-gray-800 text-center">🕒 OT 補水追蹤神器 v2</h1>
 
-        <!-- 每週統計卡片 -->
-        <div class="bg-white p-6 rounded-lg shadow-md flex justify-around text-center">
-            <div>
-                <p class="text-gray-500 font-semibold">本週 OT 日數</p>
-                <p id="weekly-days" class="text-2xl font-bold text-blue-600">0 日</p>
+        <!-- 統計卡片：本週與本月結算 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 本週結算 -->
+            <div class="bg-white p-6 rounded-lg shadow-md flex justify-around text-center border-l-4 border-blue-500">
+                <div>
+                    <p class="text-gray-500 font-semibold">本週 OT 日數</p>
+                    <p id="weekly-days" class="text-2xl font-bold text-blue-600">0 日</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 font-semibold">本週 OT 總金額 (中場結算)</p>
+                    <p id="weekly-money" class="text-2xl font-bold text-blue-600">$0</p>
+                </div>
             </div>
-            <div>
-                <p class="text-gray-500 font-semibold">本週 OT 總金額</p>
-                <p id="weekly-money" class="text-2xl font-bold text-red-600">$0</p>
+            <!-- 本月結算 -->
+            <div class="bg-white p-6 rounded-lg shadow-md flex justify-around text-center border-l-4 border-purple-500">
+                <div>
+                    <p class="text-gray-500 font-semibold">本月 OT 日數</p>
+                    <p id="monthly-days" class="text-2xl font-bold text-purple-600">0 日</p>
+                </div>
+                <div>
+                    <p class="text-gray-500 font-semibold">本月 OT 總金額 (完場總額)</p>
+                    <p id="monthly-money" class="text-2xl font-bold text-purple-600">$0</p>
+                </div>
             </div>
         </div>
 
@@ -45,6 +59,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">收工時間 (例如 19:30)</label>
                         <input type="time" id="record-time" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
+                        <p class="text-xs text-gray-500 mt-1">💡 6:15pm 開始計，7:00pm 當一個鐘，7:15後至8:00當兩個鐘，如此類推。</p>
                     </div>
                     <button onclick="saveRecord()" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">儲存紀錄</button>
                 </div>
@@ -61,7 +76,7 @@
                         <thead class="uppercase tracking-wider border-b-2 border-gray-200">
                             <tr>
                                 <th class="px-4 py-2">日期</th>
-                                <th class="px-4 py-2">時間</th>
+                                <th class="px-4 py-2">收工時間</th>
                                 <th class="px-4 py-2">OT 補水</th>
                                 <th class="px-4 py-2">圖片</th>
                                 <th class="px-4 py-2">狀態</th>
@@ -69,7 +84,7 @@
                             </tr>
                         </thead>
                         <tbody id="records-table">
-                            <!-- 紀錄會由 JS 動態生成 -->
+                            <!-- 動態生成 -->
                         </tbody>
                     </table>
                 </div>
@@ -78,14 +93,11 @@
     </div>
 
     <script>
-        // 系統設定
-        const OT_START_HOUR = 18; // 6:00 PM
-        const OT_RATE_PER_HOUR = 100;
-        let records = JSON.parse(localStorage.getItem('ot_records')) || [];
+        let records = JSON.parse(localStorage.getItem('ot_records_v2')) || [];
         let currentBase64Image = '';
         let calendar;
 
-        // 初始化日曆
+        // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             calendar = new FullCalendar.Calendar(calendarEl, {
@@ -97,12 +109,11 @@
             updateUI();
         });
 
-        // 處理圖片上傳與 OCR
+        // 圖片上傳與 OCR
         document.getElementById('image-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            // 預覽圖片並轉成 Base64
             const reader = new FileReader();
             reader.onload = function(event) {
                 currentBase64Image = event.target.result;
@@ -111,42 +122,71 @@
             };
             reader.readAsDataURL(file);
 
-            // OCR 辨識
             const statusText = document.getElementById('ocr-status');
             statusText.classList.remove('hidden');
             
             Tesseract.recognize(
                 file,
-                'eng+chi_tra', // 支援英文及繁體中文
+                'eng+chi_tra',
                 { logger: m => console.log(m) }
             ).then(({ data: { text } }) => {
                 statusText.classList.add('hidden');
-                alert("辨識完成！請核對系統抽取的日期及時間。");
                 
-                // 簡易正則表達式尋找時間 (HH:MM)
+                // 尋找時間
                 const timeMatch = text.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
                 if (timeMatch) document.getElementById('record-time').value = timeMatch[0];
 
-                // 簡易正則表達式尋找日期 (YYYY-MM-DD 或 YYYY/MM/DD)
+                // 尋找日期
                 const dateMatch = text.match(/\b(20\d{2})[-/](0[1-9]|1[0-2])[-/](0[1-9]|[12]\d|3[01])\b/);
                 if (dateMatch) {
-                    const cleanDate = dateMatch[0].replace(/\//g, '-');
-                    document.getElementById('record-date').value = cleanDate;
+                    document.getElementById('record-date').value = dateMatch[0].replace(/\//g, '-');
+                }
+
+                if (!timeMatch && !dateMatch) {
+                    alert("⚠️ 系統未能自動認出相中的日期/時間，請手動選擇填寫！圖片已成功儲存作記錄。");
+                } else {
+                    alert("✅ 辨識完成！請核對資料有冇錯。");
                 }
             }).catch(err => {
                 statusText.classList.add('hidden');
                 console.error(err);
-                alert("OCR辨識失敗，請手動輸入。");
+                alert("⚠️ OCR 讀取失敗，請手動填寫資料（相片已保留）。");
             });
         });
 
-        // 計算 OT 金額
+        // 精準 OT 金額計算邏輯
         function calculateOT(timeStr) {
             if (!timeStr) return 0;
             const [hours, minutes] = timeStr.split(':').map(Number);
-            const totalHours = hours + (minutes / 60);
-            if (totalHours <= OT_START_HOUR) return 0;
-            return Math.round((totalHours - OT_START_HOUR) * OT_RATE_PER_HOUR);
+            
+            // 轉換為當日總分鐘數
+            const totalMinutes = hours * 60 + minutes;
+            const thresholdMinutes = 18 * 60 + 15; // 6:15 PM = 1115 分鐘
+
+            if (totalMinutes <= thresholdMinutes) return 0;
+
+            // 根據你的規則：
+            // 7:00pm (19:00 = 1140分) 當一個鐘 (19:15前) -> 其實即係由 6:15 開始夠 45 分鐘當 1 個鐘，之後每夠 1 小時升級
+            // 實作邏輯：計算超過 6:15pm 嘅總分鐘數
+            const diffMinutes = totalMinutes - thresholdMinutes;
+            
+            // 每一小時 $100，即每 60 分鐘 $100。
+            // 根據你的描述：「7:00pm當一個鐘，7:15後至8:00係兩個鐘」
+            // 意思是只要過咗 7:00 (即 19:00，大約 45 分鐘) 就計 1 個鐘；過咗 7:15 就算 2 個鐘。
+            // 我們可以用向上取整或階梯式計算：
+            // 6:15 - 7:00 (45分鐘) -> 1個鐘 ($100)
+            // 7:01 - 8:00 (60分鐘) -> 2個鐘 ($200)
+            // 換句話說：第一個小時門檻是 45 分鐘，之後每 60 分鐘為一個單位。
+            
+            let hoursCount = 0;
+            if (diffMinutes <= 45) {
+                hoursCount = 1; // 6:15 到 7:00 之間當 1 個鐘
+            } else {
+                // 超過 45 分鐘後，每滿 60 分鐘加一個鐘
+                hoursCount = 1 + Math.ceil((diffMinutes - 45) / 60);
+            }
+
+            return hoursCount * 100;
         }
 
         // 儲存紀錄
@@ -155,7 +195,7 @@
             const time = document.getElementById('record-time').value;
             
             if (!date || !time) {
-                alert("請填寫日期同時間！");
+                alert("請填寫日期同收工時間！");
                 return;
             }
 
@@ -171,9 +211,9 @@
             };
 
             records.push(newRecord);
-            localStorage.setItem('ot_records', JSON.stringify(records));
+            localStorage.setItem('ot_records_v2', JSON.stringify(records));
             
-            // 重置表單
+            // 重置
             document.getElementById('record-date').value = '';
             document.getElementById('record-time').value = '';
             document.getElementById('image-upload').value = '';
@@ -188,16 +228,16 @@
             const record = records.find(r => r.id === id);
             if (record) {
                 record.isPaid = !record.isPaid;
-                localStorage.setItem('ot_records', JSON.stringify(records));
+                localStorage.setItem('ot_records_v2', JSON.stringify(records));
                 updateUI();
             }
         }
 
-        // 刪除紀錄
+        // 刪除
         function deleteRecord(id) {
             if(confirm("確定要刪除呢筆紀錄？")) {
                 records = records.filter(r => r.id !== id);
-                localStorage.setItem('ot_records', JSON.stringify(records));
+                localStorage.setItem('ot_records_v2', JSON.stringify(records));
                 updateUI();
             }
         }
@@ -206,8 +246,12 @@
         function isThisWeek(dateStr) {
             const targetDate = new Date(dateStr);
             const today = new Date();
-            const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1))); // 星期一為第一日
+            const firstDayOfWeek = new Date(today);
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1); // 星期一為首
+            firstDayOfWeek.setDate(diff);
             firstDayOfWeek.setHours(0,0,0,0);
+            
             const lastDayOfWeek = new Date(firstDayOfWeek);
             lastDayOfWeek.setDate(lastDayOfWeek.getDate() + 6);
             lastDayOfWeek.setHours(23,59,59,999);
@@ -215,33 +259,48 @@
             return targetDate >= firstDayOfWeek && targetDate <= lastDayOfWeek;
         }
 
-        // 更新介面 (日曆、列表、統計)
+        // 檢查是否本月
+        function isThisMonth(dateStr) {
+            const targetDate = new Date(dateStr);
+            const today = new Date();
+            return targetDate.getFullYear() === today.getFullYear() && 
+                   targetDate.getMonth() === today.getMonth();
+        }
+
+        // 更新介面
         function updateUI() {
             const tbody = document.getElementById('records-table');
             tbody.innerHTML = '';
+            
             let weeklyDays = 0;
             let weeklyMoney = 0;
+            let monthlyDays = 0;
+            let monthlyMoney = 0;
 
-            // 排序紀錄 (最新在前)
             records.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(record => {
-                // 統計本週
+                // 本週統計
                 if (isThisWeek(record.date)) {
                     weeklyDays++;
                     weeklyMoney += record.otMoney;
                 }
+                // 本月統計
+                if (isThisMonth(record.date)) {
+                    monthlyDays++;
+                    monthlyMoney += record.otMoney;
+                }
 
-                // 渲染列表
+                // 列表渲染
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-200 hover:bg-gray-50";
                 tr.innerHTML = `
                     <td class="px-4 py-3">${record.date}</td>
-                    <td class="px-4 py-3">${record.time}</td>
+                    <td class="px-4 py-3 font-semibold">${record.time}</td>
                     <td class="px-4 py-3 text-red-500 font-bold">$${record.otMoney}</td>
                     <td class="px-4 py-3">
-                        ${record.image ? `<a href="${record.image}" target="_blank" class="text-blue-500 underline">睇相</a>` : '無相片'}
+                        ${record.image ? `<a href="${record.image}" target="_blank" class="text-blue-500 underline font-medium">查看圖片</a>` : '<span class="text-gray-400">無相片</span>'}
                     </td>
                     <td class="px-4 py-3">
-                        <button onclick="togglePaid(${record.id})" class="px-3 py-1 rounded text-white text-xs font-bold ${record.isPaid ? 'bg-green-500' : 'bg-red-500'}">
+                        <button onclick="togglePaid(${record.id})" class="px-3 py-1 rounded text-white text-xs font-bold ${record.isPaid ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} transition">
                             ${record.isPaid ? '✅ 已收款' : '❌ 未收款'}
                         </button>
                     </td>
@@ -254,8 +313,10 @@
 
             document.getElementById('weekly-days').innerText = `${weeklyDays} 日`;
             document.getElementById('weekly-money').innerText = `$${weeklyMoney}`;
+            document.getElementById('monthly-days').innerText = `${monthlyDays} 日`;
+            document.getElementById('monthly-money').innerText = `$${monthlyMoney}`;
 
-            // 更新日曆
+            // 更新行事曆
             calendar.removeAllEvents();
             calendar.addEventSource(getCalendarEvents());
         }
@@ -264,7 +325,7 @@
             return records.map(record => ({
                 title: `$${record.otMoney} ${record.isPaid ? '✅' : '❌'}`,
                 start: record.date,
-                color: record.isPaid ? '#10B981' : '#EF4444' // 綠色已比，紅色未比
+                color: record.isPaid ? '#10B981' : '#EF4444'
             }));
         }
     </script>
