@@ -3,113 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OT 補水追蹤神器 v2</title>
+    <title>OT 補水追蹤神器 v4 (溫暖暖色版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Tesseract.js 做 OCR -->
+    <!-- 引入 Tesseract.js 做自動圖片辨識 -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- 引入 FullCalendar 顯示日曆 -->
+    <!-- 引入 FullCalendar -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <style>
+        /* 溫暖色調自訂背景與風格 */
+        body {
+            background-color: #FDFBF7; /* 暖米色底 */
+            color: #5C4033; /* 暖咖啡色字 */
+        }
+    </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-8 font-sans">
+<body class="p-4 md:p-8 font-sans">
     <div class="max-w-6xl mx-auto space-y-6">
-        <h1 class="text-3xl font-bold text-gray-800 text-center">🕒 OT 補水追蹤神器 v2</h1>
+        <h1 class="text-3xl font-bold text-center text-amber-800">☕ 溫暖系 OT 補水追蹤神器</h1>
 
-        <!-- 統計卡片：本週與本月結算 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 本週結算 -->
-            <div class="bg-white p-6 rounded-lg shadow-md flex justify-around text-center border-l-4 border-blue-500">
-                <div>
-                    <p class="text-gray-500 font-semibold">本週 OT 日數</p>
-                    <p id="weekly-days" class="text-2xl font-bold text-blue-600">0 日</p>
-                </div>
-                <div>
-                    <p class="text-gray-500 font-semibold">本週 OT 總金額 (中場結算)</p>
-                    <p id="weekly-money" class="text-2xl font-bold text-blue-600">$0</p>
-                </div>
+        <!-- 總結看板：本月完場總額 -->
+        <div class="bg-amber-50 border-l-4 border-amber-600 p-6 rounded-xl shadow-sm flex justify-around text-center">
+            <div>
+                <p class="text-amber-700 font-semibold">本月總 OT 日數</p>
+                <p id="monthly-days" class="text-3xl font-bold text-amber-900">0 日</p>
             </div>
-            <!-- 本月結算 -->
-            <div class="bg-white p-6 rounded-lg shadow-md flex justify-around text-center border-l-4 border-purple-500">
-                <div>
-                    <p class="text-gray-500 font-semibold">本月 OT 日數</p>
-                    <p id="monthly-days" class="text-2xl font-bold text-purple-600">0 日</p>
-                </div>
-                <div>
-                    <p class="text-gray-500 font-semibold">本月 OT 總金額 (完場總額)</p>
-                    <p id="monthly-money" class="text-2xl font-bold text-purple-600">$0</p>
-                </div>
+            <div>
+                <p class="text-amber-700 font-semibold">本月總 OT 金額 (完場總額)</p>
+                <p id="monthly-money" class="text-3xl font-bold text-amber-900">$0</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- 左側：上傳與紀錄表單 -->
-            <div class="bg-white p-6 rounded-lg shadow-md col-span-1">
-                <h2 class="text-xl font-bold mb-4">📝 新增 OT 紀錄</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">上傳打卡相 (自動辨識)</label>
-                        <input type="file" id="image-upload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                        <p id="ocr-status" class="text-sm text-blue-500 mt-2 hidden">🔄 圖片辨識中，請稍候...</p>
-                        <img id="image-preview" class="mt-2 hidden max-h-32 rounded border">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">打卡日期</label>
-                        <input type="date" id="record-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">收工時間 (例如 19:30)</label>
-                        <input type="time" id="record-time" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2 border">
-                        <p class="text-xs text-gray-500 mt-1">💡 6:15pm 開始計，7:00pm 當一個鐘，7:15後至8:00當兩個鐘，如此類推。</p>
-                    </div>
-                    <button onclick="saveRecord()" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">儲存紀錄</button>
+            <!-- 左側：上傳與自動辨識表單 -->
+            <div class="bg-white border border-amber-200 p-6 rounded-xl shadow-sm col-span-1 space-y-4">
+                <h2 class="text-xl font-bold text-amber-900">📸 新增 OT 紀錄 (自動認字)</h2>
+                <div>
+                    <label class="block text-sm font-medium text-amber-800">上傳打卡相</label>
+                    <input type="file" id="image-upload" accept="image/*" class="mt-1 block w-full text-sm text-amber-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer">
+                    <p id="ocr-status" class="text-sm text-amber-600 mt-2 hidden animate-pulse">🔄 正在努力識別圖片中的日期與時間...</p>
+                    <img id="image-preview" class="mt-2 hidden max-h-32 rounded border border-amber-200 mx-auto">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-amber-800">打卡日期 (可手動修改)</label>
+                    <input type="date" id="record-date" class="mt-1 block w-full border-amber-200 rounded-md shadow-sm p-2 border focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-amber-800">收工時間 (可手動修改)</label>
+                    <input type="time" id="record-time" class="mt-1 block w-full border-amber-200 rounded-md shadow-sm p-2 border focus:ring-amber-500 focus:border-amber-500">
+                    <p class="text-xs text-amber-600 mt-1">💡 6:15pm起計，7pm當1個鐘，7:15後至8pm當2個鐘。</p>
+                </div>
+                <button onclick="saveRecord()" class="w-full bg-amber-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-800 transition shadow">儲存紀錄</button>
             </div>
 
-            <!-- 右側：日曆與列表 -->
-            <div class="bg-white p-6 rounded-lg shadow-md col-span-1 md:col-span-2">
-                <h2 class="text-xl font-bold mb-4">📅 OT 日曆統計</h2>
-                <div id="calendar" class="mb-8"></div>
+            <!-- 右側：日曆與每週小結清單 -->
+            <div class="bg-white border border-amber-200 p-6 rounded-xl shadow-sm col-span-1 md:col-span-2 space-y-6">
+                <h2 class="text-xl font-bold text-amber-900">📅 OT 日曆統計</h2>
+                <div id="calendar" class="mb-4"></div>
 
-                <h2 class="text-xl font-bold mb-4 border-t pt-4">📋 詳細紀錄清單</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-left text-sm whitespace-nowrap">
-                        <thead class="uppercase tracking-wider border-b-2 border-gray-200">
-                            <tr>
-                                <th class="px-4 py-2">日期</th>
-                                <th class="px-4 py-2">收工時間</th>
-                                <th class="px-4 py-2">OT 補水</th>
-                                <th class="px-4 py-2">圖片</th>
-                                <th class="px-4 py-2">狀態</th>
-                                <th class="px-4 py-2">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="records-table">
-                            <!-- 動態生成 -->
-                        </tbody>
-                    </table>
+                <div class="border-t border-amber-100 pt-4">
+                    <h2 class="text-xl font-bold text-amber-900 mb-4">📊 每週中場結算小結 (本周、上周、各星期)</h2>
+                    <!-- 每週小結清單容器 -->
+                    <div id="weekly-sections" class="space-y-4">
+                        <!-- 動態生成各星期小結 -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let records = JSON.parse(localStorage.getItem('ot_records_v2')) || [];
+        let records = JSON.parse(localStorage.getItem('ot_records_v4')) || [];
         let currentBase64Image = '';
         let calendar;
 
-        // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                height: 400,
+                height: 380,
                 events: getCalendarEvents()
             });
             calendar.render();
             updateUI();
         });
 
-        // 圖片上傳與 OCR
+        // 圖片上傳 + 增強型自動 OCR 識別日期與時間
         document.getElementById('image-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -117,75 +96,63 @@
             const reader = new FileReader();
             reader.onload = function(event) {
                 currentBase64Image = event.target.result;
-                document.getElementById('image-preview').src = currentBase64Image;
-                document.getElementById('image-preview').classList.remove('hidden');
+                const preview = document.getElementById('image-preview');
+                preview.src = currentBase64Image;
+                preview.classList.remove('hidden');
             };
             reader.readAsDataURL(file);
 
             const statusText = document.getElementById('ocr-status');
             statusText.classList.remove('hidden');
-            
+
+            // 使用 Tesseract 進行圖像辨識
             Tesseract.recognize(
                 file,
                 'eng+chi_tra',
                 { logger: m => console.log(m) }
             ).then(({ data: { text } }) => {
                 statusText.classList.add('hidden');
-                
-                // 尋找時間
+                console.log("OCR 识别结果:", text);
+
+                // 尋找時間格式 (HH:MM)
                 const timeMatch = text.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
-                if (timeMatch) document.getElementById('record-time').value = timeMatch[0];
+                if (timeMatch) {
+                    document.getElementById('record-time').value = timeMatch[0];
+                }
 
-                // 尋找日期
-                const dateMatch = text.match(/\b(20\d{2})[-/](0[1-9]|1[0-2])[-/](0[1-9]|[12]\d|3[01])\b/);
+                // 尋找日期格式 (YYYY-MM-DD 或 YYYY/MM/DD 或 YYYY年MM月DD日)
+                const dateMatch = text.match(/\b(20\d{2})[-/.年](0[1-9]|1[0-2])[-/.月](0[1-9]|[12]\d|3[01])日?\b/);
                 if (dateMatch) {
-                    document.getElementById('record-date').value = dateMatch[0].replace(/\//g, '-');
+                    const year = dateMatch[1];
+                    const month = dateMatch[2];
+                    const day = dateMatch[3];
+                    document.getElementById('record-date').value = `${year}-${month}-${day}`;
                 }
 
-                if (!timeMatch && !dateMatch) {
-                    alert("⚠️ 系統未能自動認出相中的日期/時間，請手動選擇填寫！圖片已成功儲存作記錄。");
-                } else {
-                    alert("✅ 辨識完成！請核對資料有冇錯。");
-                }
+                alert("✨ 圖片辨識完成！系統已自動嘗試填入日期與時間，請核對後按儲存。");
             }).catch(err => {
                 statusText.classList.add('hidden');
                 console.error(err);
-                alert("⚠️ OCR 讀取失敗，請手動填寫資料（相片已保留）。");
+                alert("⚠️ 自動識別遇到困難，圖片已保留，請手動調整日期與時間。");
             });
         });
 
-        // 精準 OT 金額計算邏輯
+        // 計算 OT 金額規則
         function calculateOT(timeStr) {
             if (!timeStr) return 0;
             const [hours, minutes] = timeStr.split(':').map(Number);
-            
-            // 轉換為當日總分鐘數
             const totalMinutes = hours * 60 + minutes;
-            const thresholdMinutes = 18 * 60 + 15; // 6:15 PM = 1115 分鐘
+            const thresholdMinutes = 18 * 60 + 15; // 6:15 PM
 
             if (totalMinutes <= thresholdMinutes) return 0;
 
-            // 根據你的規則：
-            // 7:00pm (19:00 = 1140分) 當一個鐘 (19:15前) -> 其實即係由 6:15 開始夠 45 分鐘當 1 個鐘，之後每夠 1 小時升級
-            // 實作邏輯：計算超過 6:15pm 嘅總分鐘數
             const diffMinutes = totalMinutes - thresholdMinutes;
-            
-            // 每一小時 $100，即每 60 分鐘 $100。
-            // 根據你的描述：「7:00pm當一個鐘，7:15後至8:00係兩個鐘」
-            // 意思是只要過咗 7:00 (即 19:00，大約 45 分鐘) 就計 1 個鐘；過咗 7:15 就算 2 個鐘。
-            // 我們可以用向上取整或階梯式計算：
-            // 6:15 - 7:00 (45分鐘) -> 1個鐘 ($100)
-            // 7:01 - 8:00 (60分鐘) -> 2個鐘 ($200)
-            // 換句話說：第一個小時門檻是 45 分鐘，之後每 60 分鐘為一個單位。
-            
             let hoursCount = 0;
             if (diffMinutes <= 45) {
                 hoursCount = 1; // 6:15 到 7:00 之間當 1 個鐘
             } else {
-                // 超過 45 分鐘後，每滿 60 分鐘加一個鐘
                 hoursCount = 1 + Math.ceil((diffMinutes - 45) / 60);
             }
-
             return hoursCount * 100;
         }
 
@@ -195,7 +162,7 @@
             const time = document.getElementById('record-time').value;
             
             if (!date || !time) {
-                alert("請填寫日期同收工時間！");
+                alert("請確保填好日期同收工時間先好儲存！");
                 return;
             }
 
@@ -211,9 +178,8 @@
             };
 
             records.push(newRecord);
-            localStorage.setItem('ot_records_v2', JSON.stringify(records));
+            localStorage.setItem('ot_records_v4', JSON.stringify(records));
             
-            // 重置
             document.getElementById('record-date').value = '';
             document.getElementById('record-time').value = '';
             document.getElementById('image-upload').value = '';
@@ -221,102 +187,154 @@
             currentBase64Image = '';
 
             updateUI();
+            alert("✅ 成功儲存 OT 紀錄！");
         }
 
-        // 切換收款狀態
         function togglePaid(id) {
             const record = records.find(r => r.id === id);
             if (record) {
                 record.isPaid = !record.isPaid;
-                localStorage.setItem('ot_records_v2', JSON.stringify(records));
+                localStorage.setItem('ot_records_v4', JSON.stringify(records));
                 updateUI();
             }
         }
 
-        // 刪除
         function deleteRecord(id) {
             if(confirm("確定要刪除呢筆紀錄？")) {
                 records = records.filter(r => r.id !== id);
-                localStorage.setItem('ot_records_v2', JSON.stringify(records));
+                localStorage.setItem('ot_records_v4', JSON.stringify(records));
                 updateUI();
             }
         }
 
-        // 檢查是否本週
-        function isThisWeek(dateStr) {
-            const targetDate = new Date(dateStr);
+        // 取得日期屬於該月的第幾個星期，以及是否本周/上周
+        function getWeekCategory(dateStr) {
+            const d = new Date(dateStr);
+            const year = d.getFullYear();
+            const month = d.getMonth();
+            const dateNum = d.getDate();
+
+            // 計算是當月第幾個星期 (以每 7 日區間粗分，或按星期一對齊)
+            const firstDayOfMonth = new Date(year, month, 1);
+            const weekNumber = Math.ceil((dateNum + firstDayOfMonth.getDay()) / 7);
+            
+            const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+            const weekTitle = `${monthNames[month]}第${weekNumber}星期`;
+
+            // 檢查是否本周或上周
             const today = new Date();
-            const firstDayOfWeek = new Date(today);
-            const day = today.getDay();
-            const diff = today.getDate() - day + (day === 0 ? -6 : 1); // 星期一為首
-            firstDayOfWeek.setDate(diff);
-            firstDayOfWeek.setHours(0,0,0,0);
-            
-            const lastDayOfWeek = new Date(firstDayOfWeek);
-            lastDayOfWeek.setDate(lastDayOfWeek.getDate() + 6);
-            lastDayOfWeek.setHours(23,59,59,999);
-            
-            return targetDate >= firstDayOfWeek && targetDate <= lastDayOfWeek;
+            const isCurrentWeek = isWithinWeek(d, today, 0);
+            const isLastWeek = isWithinWeek(d, today, -1);
+
+            let tag = weekTitle;
+            if (isCurrentWeek) tag = "🔥 本周";
+            else if (isLastWeek) tag = "⏳ 上周";
+
+            return { tag, weekTitle, yearMonth: `${year}-${month}` };
         }
 
-        // 檢查是否本月
-        function isThisMonth(dateStr) {
-            const targetDate = new Date(dateStr);
-            const today = new Date();
-            return targetDate.getFullYear() === today.getFullYear() && 
-                   targetDate.getMonth() === today.getMonth();
+        function isWithinWeek(targetDate, referenceDate, weekOffset) {
+            const d = new Date(referenceDate);
+            const day = d.getDay();
+            const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1) + (weekOffset * 7);
+            
+            const startOfWeek = new Date(d.setDate(diffToMonday));
+            startOfWeek.setHours(0,0,0,0);
+            
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 6);
+            endOfWeek.setHours(23,59,59,999);
+
+            return targetDate >= startOfWeek && targetDate <= endOfWeek;
         }
 
-        // 更新介面
+        // 更新介面與分組顯示
         function updateUI() {
-            const tbody = document.getElementById('records-table');
-            tbody.innerHTML = '';
-            
-            let weeklyDays = 0;
-            let weeklyMoney = 0;
             let monthlyDays = 0;
             let monthlyMoney = 0;
 
-            records.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(record => {
-                // 本週統計
-                if (isThisWeek(record.date)) {
-                    weeklyDays++;
-                    weeklyMoney += record.otMoney;
-                }
-                // 本月統計
-                if (isThisMonth(record.date)) {
+            const today = new Date();
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // 計算本月總額
+            records.forEach(record => {
+                const targetDate = new Date(record.date);
+                if (targetDate.getFullYear() === today.getFullYear() && targetDate.getMonth() === today.getMonth()) {
                     monthlyDays++;
                     monthlyMoney += record.otMoney;
                 }
-
-                // 列表渲染
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-gray-200 hover:bg-gray-50";
-                tr.innerHTML = `
-                    <td class="px-4 py-3">${record.date}</td>
-                    <td class="px-4 py-3 font-semibold">${record.time}</td>
-                    <td class="px-4 py-3 text-red-500 font-bold">$${record.otMoney}</td>
-                    <td class="px-4 py-3">
-                        ${record.image ? `<a href="${record.image}" target="_blank" class="text-blue-500 underline font-medium">查看圖片</a>` : '<span class="text-gray-400">無相片</span>'}
-                    </td>
-                    <td class="px-4 py-3">
-                        <button onclick="togglePaid(${record.id})" class="px-3 py-1 rounded text-white text-xs font-bold ${record.isPaid ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} transition">
-                            ${record.isPaid ? '✅ 已收款' : '❌ 未收款'}
-                        </button>
-                    </td>
-                    <td class="px-4 py-3">
-                        <button onclick="deleteRecord(${record.id})" class="text-gray-400 hover:text-red-500">🗑️</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
             });
 
-            document.getElementById('weekly-days').innerText = `${weeklyDays} 日`;
-            document.getElementById('weekly-money').innerText = `$${weeklyMoney}`;
             document.getElementById('monthly-days').innerText = `${monthlyDays} 日`;
             document.getElementById('monthly-money').innerText = `$${monthlyMoney}`;
 
-            // 更新行事曆
+            // 按群組分類 (本周、上周、1月第1星期等)
+            const groups = {};
+            records.forEach(record => {
+                const { tag } = getWeekCategory(record.date);
+                if (!groups[tag]) groups[tag] = [];
+                groups[tag].push(record);
+            });
+
+            const container = document.getElementById('weekly-sections');
+            container.innerHTML = '';
+
+            if (Object.keys(groups).length === 0) {
+                container.innerHTML = `<p class="text-amber-600 text-center py-4">暫時未有任何 OT 紀錄，快啲上傳第一張相啦！</p>`;
+            }
+
+            for (const [groupName, groupRecords] of Object.entries(groups)) {
+                let groupDays = groupRecords.length;
+                let groupMoney = groupRecords.reduce((sum, r) => sum + r.otMoney, 0);
+
+                let sectionHtml = `
+                    <div class="border border-amber-200 rounded-lg p-4 bg-amber-50/50 shadow-xs">
+                        <div class="flex justify-between items-center mb-2 pb-2 border-b border-amber-200">
+                            <span class="font-bold text-amber-900 text-lg">${groupName}</span>
+                            <span class="text-sm font-semibold text-amber-800 bg-amber-200/60 px-3 py-1 rounded-full">
+                                小結：${groupDays} 日 | 總計 $${groupMoney}
+                            </span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-left text-sm">
+                                <thead>
+                                    <tr class="text-amber-700 text-xs uppercase">
+                                        <th class="py-1 px-2">日期</th>
+                                        <th class="py-1 px-2">收工時間</th>
+                                        <th class="py-1 px-2">補水</th>
+                                        <th class="py-1 px-2">相片</th>
+                                        <th class="py-1 px-2">狀態</th>
+                                        <th class="py-1 px-2">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                groupRecords.forEach(record => {
+                    sectionHtml += `
+                        <tr class="border-b border-amber-100 hover:bg-amber-100/40">
+                            <td class="py-2 px-2 text-amber-900">${record.date}</td>
+                            <td class="py-2 px-2 font-semibold text-amber-900">${record.time}</td>
+                            <td class="py-2 px-2 text-amber-800 font-bold">$${record.otMoney}</td>
+                            <td class="py-2 px-2">
+                                ${record.image ? `<a href="${record.image}" target="_blank" class="text-amber-700 underline font-medium">查看相片</a>` : '<span class="text-amber-400">無相片</span>'}
+                            </td>
+                            <td class="py-2 px-2">
+                                <button onclick="togglePaid(${record.id})" class="px-2.5 py-1 rounded text-white text-xs font-bold ${record.isPaid ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-500 hover:bg-rose-600'} transition">
+                                    ${record.isPaid ? '✅ 已收款' : '❌ 未收款'}
+                                </button>
+                            </td>
+                            <td class="py-2 px-2">
+                                <button onclick="deleteRecord(${record.id})" class="text-amber-400 hover:text-rose-600">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                sectionHtml += `</tbody></table></div></div>`;
+                container.innerHTML += sectionHtml;
+            }
+
             calendar.removeAllEvents();
             calendar.addEventSource(getCalendarEvents());
         }
@@ -325,7 +343,7 @@
             return records.map(record => ({
                 title: `$${record.otMoney} ${record.isPaid ? '✅' : '❌'}`,
                 start: record.date,
-                color: record.isPaid ? '#10B981' : '#EF4444'
+                color: record.isPaid ? '#059669' : '#DC2626'
             }));
         }
     </script>
