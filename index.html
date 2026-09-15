@@ -3,163 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OT 記錄與日曆</title>
-    <!-- 引入 Tailwind CSS 方便排版 -->
+    <title>OT 記錄神器</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Tesseract.js 做圖片文字識別 -->
+    <!-- Tesseract.js (OCR) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
-<body class="bg-gray-100 p-4 font-sans max-w-md mx-auto pb-10">
+<body class="bg-gray-100 p-4 font-sans max-w-md mx-auto min-h-screen">
 
-    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">🕒 OT 記錄與日曆</h1>
+    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">🕒 OT 記錄神器</h1>
 
-    <!-- 數據統計 -->
-    <div class="bg-white p-4 rounded-lg shadow-md mb-6 border-l-4 border-blue-500">
+    <!-- 統計面板 -->
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 border-l-4 border-blue-500">
         <h2 class="font-bold text-lg mb-2 text-gray-700">📊 數據統計</h2>
-        <div class="grid grid-cols-2 gap-2 text-sm">
-            <div class="bg-blue-50 p-2 rounded">
-                <p class="text-gray-600">本週 OT</p>
-                <p class="font-bold text-blue-700 text-lg"><span id="weekDays">0</span> 日 ($<span id="weekMoney">0</span>)</p>
-            </div>
-            <div class="bg-blue-50 p-2 rounded">
-                <p class="text-gray-600">本月 OT</p>
-                <p class="font-bold text-blue-700 text-lg"><span id="monthDays">0</span> 日 ($<span id="monthMoney">0</span>)</p>
-            </div>
+        <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-2">
+            <div>本週 OT：<span id="weekTotal" class="font-bold text-blue-600">0</span> 日 ($<span id="weekMoney">0</span>)</div>
+            <div>本月 OT：<span id="monthTotal" class="font-bold text-blue-600">0</span> 日 ($<span id="monthMoney">0</span>)</div>
         </div>
-        <div class="mt-3 bg-red-50 p-2 rounded border border-red-100">
-            <p class="text-red-600 font-bold">⚠️ 尚未收到總額：$<span id="unpaidTotal">0</span></p>
-        </div>
-    </div>
-
-    <!-- 日曆統計 -->
-    <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-        <div class="flex justify-between items-center mb-4">
-            <button onclick="changeMonth(-1)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded font-bold text-gray-600">&lt;</button>
-            <h2 id="calendarMonthYear" class="font-bold text-lg text-gray-700">2026年 9月</h2>
-            <button onclick="changeMonth(1)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded font-bold text-gray-600">&gt;</button>
-        </div>
-        <!-- 星期表頭 -->
-        <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-500 mb-2">
-            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-        </div>
-        <!-- 日曆網格 -->
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
-        <div class="flex justify-center gap-4 mt-3 text-xs text-gray-500">
-            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-red-500 rounded-full"></div> 未收錢</span>
-            <span class="flex items-center gap-1"><div class="w-3 h-3 bg-green-500 rounded-full"></div> 已收錢</span>
-        </div>
+        <hr class="my-2 border-gray-100">
+        <p class="text-base text-red-600 font-bold">⚠️ 尚未收到 OT 錢：$<span id="unpaidTotal">0</span></p>
     </div>
 
     <!-- 新增記錄表單 -->
-    <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-        <h2 class="font-bold text-lg mb-4 text-gray-700">➕ 影相打卡記錄</h2>
+    <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+        <h2 class="font-bold text-lg mb-4 text-gray-700">➕ 新增 OT 記錄</h2>
         
         <label class="block text-sm font-medium text-gray-700 mb-1">上傳打卡相片</label>
-        <input type="file" accept="image/*" id="imageInput" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4"/>
+        <input type="file" accept="image/*" id="imageInput" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-3"/>
         
-        <div id="loadingMsg" class="hidden text-sm text-blue-600 mb-4 animate-pulse">🤖 AI 正在讀取相片中的日期及時間，請稍候...</div>
-        <img id="preview" class="hidden w-full h-auto rounded mb-4 max-h-48 object-contain bg-gray-50 border">
+        <!-- 載入狀態 -->
+        <div id="loadingMsg" class="hidden text-sm text-blue-600 mb-3 p-2 bg-blue-50 rounded flex items-center gap-2">
+            <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>正在分析圖片中的日期與時間...</span>
+        </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-4">
+        <img id="preview" class="hidden w-full h-auto rounded-lg mb-3 max-h-48 object-contain bg-gray-50 border">
+
+        <!-- 識別出的文字預覽 -->
+        <div id="ocrResultBox" class="hidden mb-3 p-2 bg-gray-50 border rounded text-xs text-gray-600">
+            <span class="font-bold block mb-1">🔍 圖片辨識結果：</span>
+            <div id="ocrRawText" class="whitespace-pre-wrap font-mono text-[10px] max-h-20 overflow-y-auto"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
-                <input type="date" id="dateInput" class="w-full border-gray-300 rounded-md border p-2 text-sm">
+                <label class="block text-sm font-medium text-gray-700 mb-1">OT 日期 <span class="text-red-500">*</span></label>
+                <input type="date" id="dateInput" class="w-full border-gray-300 rounded-lg border p-2 text-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">時間</label>
-                <input type="time" id="timeInput" class="w-full border-gray-300 rounded-md border p-2 text-sm">
+                <label class="block text-sm font-medium text-gray-700 mb-1">OT 時間</label>
+                <input type="time" id="timeInput" class="w-full border-gray-300 rounded-lg border p-2 text-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
-        <button id="saveBtn" class="w-full bg-blue-600 text-white py-3 rounded-md font-bold hover:bg-blue-700 transition shadow-lg">儲存記錄</button>
+
+        <button id="saveBtn" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700 active:bg-blue-800 transition">儲存記錄</button>
     </div>
 
     <!-- 記錄列表 -->
-    <div class="bg-white p-4 rounded-lg shadow-md">
-        <h2 class="font-bold text-lg mb-4 text-gray-700">📝 歷史記錄 (圖文並茂)</h2>
-        <div id="recordList" class="space-y-4"></div>
+    <div class="bg-white p-4 rounded-xl shadow-sm">
+        <h2 class="font-bold text-lg mb-4 text-gray-700">📝 歷史記錄</h2>
+        <div id="recordList" class="space-y-3"></div>
     </div>
 
     <script>
-        const OT_RATE = 100;
-        let records = JSON.parse(localStorage.getItem('ot_records')) || [];
+        const OT_RATE = 100; // 每日 OT 補水 $100
+        let records = [];
+        try {
+            records = JSON.parse(localStorage.getItem('ot_records')) || [];
+        } catch (e) {
+            records = [];
+        }
         let currentCompressedImage = '';
-        let displayDate = new Date(); // 用於日曆顯示的月份
 
-        // 初始化
+        // 初始化頁面
         updateUI();
 
-        // 圖片上傳及 OCR 處理
+        // 監聽圖片上傳
         document.getElementById('imageInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            document.getElementById('loadingMsg').classList.remove('hidden');
+            const loadingMsg = document.getElementById('loadingMsg');
             const preview = document.getElementById('preview');
+            const ocrResultBox = document.getElementById('ocrResultBox');
+            const ocrRawText = document.getElementById('ocrRawText');
+
+            loadingMsg.classList.remove('hidden');
+            ocrResultBox.classList.add('hidden');
             
             // 壓縮圖片
             currentCompressedImage = await compressImage(file);
             preview.src = currentCompressedImage;
             preview.classList.remove('hidden');
 
+            // 執行 Tesseract OCR 文字辨識
             try {
-                const result = await Tesseract.recognize(currentCompressedImage, 'eng');
-                const text = result.data.text;
-                
-                const dateMatch = text.match(/(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
-                const timeMatch = text.match(/(\d{1,2}:\d{2})/);
-                
+                const worker = await Tesseract.createWorker('eng+chi_tra');
+                const ret = await worker.recognize(currentCompressedImage);
+                const text = ret.data.text;
+                await worker.terminate();
+
+                // 顯示辨識出來嘅文字供除錯
+                ocrRawText.innerText = text.trim() || "(未識別到文字)";
+                ocrResultBox.classList.remove('hidden');
+
+                // 解析日期 (支持 YYYY-MM-DD, YYYY/MM/DD, DD/MM/YYYY 等)
+                const dateMatch = text.match(/(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})|(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})/);
                 if (dateMatch) {
-                    let d = new Date(dateMatch[0].replace(/\//g, '-'));
-                    if(!isNaN(d)) document.getElementById('dateInput').value = d.toISOString().split('T')[0];
+                    let rawDateStr = dateMatch[0].replace(/[/.]/g, '-');
+                    let parts = rawDateStr.split('-');
+                    let formattedDate = '';
+                    if (parts[0].length === 4) {
+                        formattedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                    } else if (parts[2].length === 4) {
+                        formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    }
+                    if (formattedDate && !isNaN(new Date(formattedDate).getTime())) {
+                        document.getElementById('dateInput').value = formattedDate;
+                    }
+                } else {
+                    // 若無識別出日期，預設為今日
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('dateInput').value = today;
                 }
+
+                // 解析時間 (支持 HH:MM，12小時制或24小時制)
+                const timeMatch = text.match(/([01]?\d|2[0-3]):([0-5]\d)/);
                 if (timeMatch) {
-                    // 簡單補齊格式例如 9:30 -> 09:30
-                    let t = timeMatch[0];
-                    if (t.length === 4) t = '0' + t;
-                    document.getElementById('timeInput').value = t;
+                    let hour = timeMatch[1].padStart(2, '0');
+                    let min = timeMatch[2];
+                    document.getElementById('timeInput').value = `${hour}:${min}`;
                 }
+
             } catch (error) {
-                console.error("OCR 失敗", error);
+                console.error("OCR 錯誤:", error);
+                alert("圖片解析失敗，請手動選擇日期與時間。");
             } finally {
-                document.getElementById('loadingMsg').classList.add('hidden');
+                loadingMsg.classList.add('hidden');
             }
         });
 
-        // 儲存記錄
+        // 按鈕：儲存記錄
         document.getElementById('saveBtn').addEventListener('click', () => {
             const date = document.getElementById('dateInput').value;
             const time = document.getElementById('timeInput').value;
 
             if (!date) {
-                alert("請填寫日期！");
+                alert("請先選擇或填寫 OT 日期！");
                 return;
             }
 
             const newRecord = {
                 id: Date.now().toString(),
                 date: date,
-                time: time,
+                time: time || '',
                 image: currentCompressedImage,
                 isPaid: false
             };
 
-            // 如果同一日已經有記錄，可以選擇覆蓋或允許重複 (呢度允許重複，可能一日OT兩次)
             records.push(newRecord);
             records.sort((a, b) => new Date(b.date) - new Date(a.date));
-            saveData();
-            
-            // 清空表單
-            document.getElementById('imageInput').value = '';
-            document.getElementById('dateInput').value = '';
-            document.getElementById('timeInput').value = '';
-            document.getElementById('preview').classList.add('hidden');
-            currentCompressedImage = '';
-            
-            // 將日曆跳轉到新增記錄嘅月份
-            displayDate = new Date(date);
-            updateUI();
+
+            if (saveData()) {
+                // 儲存成功後重置表單
+                document.getElementById('imageInput').value = '';
+                document.getElementById('dateInput').value = '';
+                document.getElementById('timeInput').value = '';
+                document.getElementById('preview').classList.add('hidden');
+                document.getElementById('ocrResultBox').classList.add('hidden');
+                currentCompressedImage = '';
+                alert("✅ OT 紀錄已成功儲存！");
+            }
         });
 
+        // 切換收到錢狀態
         function toggleStatus(id) {
             const record = records.find(r => r.id === id);
             if (record) {
@@ -168,150 +188,88 @@
             }
         }
 
+        // 刪除紀錄
         function deleteRecord(id) {
-            if(confirm("確定要刪除這條記錄嗎？")) {
+            if (confirm("確定要刪除呢條 OT 記錄？")) {
                 records = records.filter(r => r.id !== id);
                 saveData();
             }
         }
 
+        // 儲存至 localStorage
         function saveData() {
             try {
                 localStorage.setItem('ot_records', JSON.stringify(records));
                 updateUI();
+                return true;
             } catch (e) {
-                alert("儲存空間已滿！請先刪除部分舊記錄。");
+                alert("儲存失敗！可能瀏覽器空間不足，請刪除部分舊紀錄再試。");
+                return false;
             }
         }
 
-        function changeMonth(offset) {
-            displayDate.setMonth(displayDate.getMonth() + offset);
-            updateUI();
-        }
-
-        // 核心：更新所有畫面
+        // 更新 UI 數據同列表
         function updateUI() {
-            renderStats();
-            renderCalendar();
-            renderList();
-        }
-
-        // 渲染統計數據
-        function renderStats() {
-            const now = new Date();
-            // 計算本週日 (星期日為一週開始)
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - now.getDay());
-            startOfWeek.setHours(0,0,0,0);
-            
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-            let weekDaysCount = 0, monthDaysCount = 0, unpaidAmount = 0;
-
-            records.forEach(r => {
-                const rDate = new Date(r.date);
-                if (rDate.getFullYear() === startOfMonth.getFullYear() && rDate.getMonth() === startOfMonth.getMonth()) {
-                    monthDaysCount++;
-                }
-                if (rDate >= startOfWeek) {
-                    weekDaysCount++;
-                }
-                if (!r.isPaid) {
-                    unpaidAmount += OT_RATE;
-                }
-            });
-
-            document.getElementById('weekDays').innerText = weekDaysCount;
-            document.getElementById('weekMoney').innerText = weekDaysCount * OT_RATE;
-            document.getElementById('monthDays').innerText = monthDaysCount;
-            document.getElementById('monthMoney').innerText = monthDaysCount * OT_RATE;
-            document.getElementById('unpaidTotal').innerText = unpaidAmount;
-        }
-
-        // 渲染日曆
-        function renderCalendar() {
-            const year = displayDate.getFullYear();
-            const month = displayDate.getMonth();
-            document.getElementById('calendarMonthYear').innerText = `${year}年 ${month + 1}月`;
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
-
-            // 空白格 (月份第一日之前的日子)
-            for (let i = 0; i < firstDay; i++) {
-                grid.innerHTML += `<div class="p-2 h-12 bg-gray-50 rounded"></div>`;
-            }
-
-            // 填寫日子
-            for (let i = 1; i <= daysInMonth; i++) {
-                // 補齊格式，例如 2026-09-05
-                const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                
-                // 搵下呢日有無 OT 記錄
-                const dayRecords = records.filter(r => r.date === dateStr);
-                
-                let marker = '';
-                let bgClass = "bg-white border border-gray-100";
-                
-                if (dayRecords.length > 0) {
-                    bgClass = "bg-blue-50 border border-blue-200";
-                    // 檢查是否全部已收錢
-                    const allPaid = dayRecords.every(r => r.isPaid);
-                    marker = `<div class="w-3 h-3 rounded-full mx-auto mt-1 shadow-sm ${allPaid ? 'bg-green-500' : 'bg-red-500 animate-bounce'}"></div>`;
-                }
-
-                grid.innerHTML += `
-                    <div class="p-1 h-14 rounded flex flex-col items-center justify-center ${bgClass}">
-                        <span class="text-sm font-medium ${dayRecords.length > 0 ? 'text-blue-800' : 'text-gray-600'}">${i}</span>${marker}
-                    </div>
-                `;
-            }
-        }
-
-        // 渲染記錄列表
-        function renderList() {
             const listDiv = document.getElementById('recordList');
             listDiv.innerHTML = '';
 
-            if (records.length === 0) {
-                listDiv.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">暫時未有 OT 記錄</p>';
-                return;
-            }
+            const now = new Date();
+            // 計算本週星期一
+            const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - dayOfWeek + 1);
+            startOfWeek.setHours(0,0,0,0);
 
-            records.forEach(r => {
-                const div = document.createElement('div');
-                div.className = `p-3 rounded-lg border ${r.isPaid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} flex gap-3`;
-                
-                const imgHtml = r.image 
-                    ? `<img src="${r.image}" class="w-24 h-24 object-cover rounded shadow-sm border bg-white">` 
-                    : `<div class="w-24 h-24 bg-gray-200 flex items-center justify-center text-xs text-gray-500 rounded">無圖</div>`;
-                
-                div.innerHTML = `
-                    ${imgHtml}
-                    <div class="flex-1 flex flex-col justify-between">
-                        <div>
-                            <p class="font-bold text-gray-800">${r.date} <span class="text-sm font-normal text-gray-500">${r.time || ''}</span></p>
-                            <p class="text-sm font-bold mt-1 ${r.isPaid ? 'text-green-600' : 'text-red-600'}">
-                                ${r.isPaid ? '✅ 已收 $100' : '⏳ 未收 $100'}
-                            </p>
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            let weekDays = 0, monthDays = 0, unpaidAmount = 0;
+
+            if (records.length === 0) {
+                listDiv.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">暫時未有 OT 紀錄</p>`;
+            } else {
+                records.forEach(r => {
+                    const rDate = new Date(r.date + 'T00:00:00');
+                    
+                    if (rDate >= startOfMonth) monthDays++;
+                    if (rDate >= startOfWeek) weekDays++;
+                    if (!r.isPaid) unpaidAmount += OT_RATE;
+
+                    const div = document.createElement('div');
+                    div.className = `p-3 rounded-lg border ${r.isPaid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} flex gap-3 items-center`;
+                    
+                    const imgHtml = r.image 
+                        ? `<img src="${r.image}" class="w-16 h-16 object-cover rounded border bg-white flex-shrink-0">` 
+                        : `<div class="w-16 h-16 bg-gray-100 border text-gray-400 flex items-center justify-center text-xs rounded flex-shrink-0">無圖片</div>`;
+                    
+                    div.innerHTML = `
+                        ${imgHtml}
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-gray-800 text-sm">${r.date} ${r.time ? '<span class="text-xs font-normal text-gray-500">(' + r.time + ')</span>' : ''}</div>
+                            <div class="text-xs font-semibold mt-1 ${r.isPaid ? 'text-green-600' : 'text-red-600'}">
+                                ${r.isPaid ? '✅ 已收到 $100' : '⏳ 未收到 $100'}
+                            </div>
                         </div>
-                        <div class="flex gap-2 text-xs mt-2">
-                            <button onclick="toggleStatus('${r.id}')" class="flex-1 py-1.5 rounded bg-white shadow border font-bold ${r.isPaid ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}">
-                                ${r.isPaid ? '改為未收' : '👉 標記已收'}
+                        <div class="flex flex-col gap-1 flex-shrink-0">
+                            <button onclick="toggleStatus('${r.id}')" class="px-2 py-1 rounded text-xs font-medium shadow-sm border ${r.isPaid ? 'bg-white text-gray-700 hover:bg-gray-50' : 'bg-green-600 text-white hover:bg-green-700'}">
+                                ${r.isPaid ? '標為未收' : '標為已收'}
                             </button>
-                            <button onclick="deleteRecord('${r.id}')" class="px-3 py-1.5 rounded bg-gray-100 text-gray-500 shadow border hover:bg-red-100 hover:text-red-600">
+                            <button onclick="deleteRecord('${r.id}')" class="px-2 py-1 rounded text-xs text-red-600 hover:bg-red-100 border border-transparent">
                                 刪除
                             </button>
                         </div>
-                    </div>
-                `;
-                listDiv.appendChild(div);
-            });
+                    `;
+                    listDiv.appendChild(div);
+                });
+            }
+
+            document.getElementById('weekTotal').innerText = weekDays;
+            document.getElementById('weekMoney').innerText = weekDays * OT_RATE;
+            document.getElementById('monthTotal').innerText = monthDays;
+            document.getElementById('monthMoney').innerText = monthDays * OT_RATE;
+            document.getElementById('unpaidTotal').innerText = unpaidAmount;
         }
 
-        // 圖片壓縮函數
+        // 強力壓縮圖片函數
         function compressImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -321,18 +279,22 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800;
-                        let width = img.width, height = img.height;
+                        const MAX_WIDTH = 400; // 縮小寬度至 400px，極大節省容量
+                        let width = img.width;
+                        let height = img.height;
+
                         if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
+                            height = Math.round((height * MAX_WIDTH) / width);
                             width = MAX_WIDTH;
                         }
-                        canvas.width = width; canvas.height = height;
+
+                        canvas.width = width;
+                        canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    }
-                }
+                        resolve(canvas.toDataURL('image/jpeg', 0.4)); // 低壓縮率節省空間
+                    };
+                };
             });
         }
     </script>
